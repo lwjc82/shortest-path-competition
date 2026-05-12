@@ -3,10 +3,7 @@
 Your job: take the provided Dijkstra implementation and make it **faster** on the
 released graph instances, without changing its output.
 
-Full rules and dataset description:
-[docs/superpowers/specs/2026-05-12-shortest-path-competition-design.md](docs/superpowers/specs/2026-05-12-shortest-path-competition-design.md).
-
-This README is the quick-start.
+This README contains everything you need.
 
 ## What's in this repo
 
@@ -67,7 +64,8 @@ make solver
 Now improve `solver.cpp`. Your submission must:
 
 - Keep the same command-line interface: `./solver <graph> <queries> <output>`.
-- Read the file formats described in the spec (§4).
+- Read the same file formats as the foundation (see the parsing code in
+  `dijkstra_foundation.cpp`).
 - Produce **byte-identical** output to the foundation on every instance
   (modulo the trailing newline).
 - Be a derivative of the foundation, not a rewrite. Submit a
@@ -123,33 +121,11 @@ Notes:
 - The foundation is deterministic — re-running it on the same input
   yields byte-identical output (verified by SHA-1 on all small and
   medium instances). Your solver must do the same.
-- `social` is the slowest baseline because its small diameter means
-  each query relaxes a large fraction of the graph. A* doesn't help
-  here (no coordinates) — speedups on this category come from
-  bidirectional search and data-structure work.
 
 Large-tier (1M-node) baseline times will be published after the full
 large-tier run completes.
 
-## Ideas that tend to work
-
-Without giving away the code:
-
-- **Bidirectional Dijkstra** (works on any graph).
-- **A\*** with straight-line / Manhattan heuristic — only on graphs with
-  coordinates (ROAD, GRID, CLUSTER).
-- **ALT (A\* + Landmarks + Triangle inequality)** — pick a few landmarks,
-  precompute their distances, use as a lower bound.
-- **Early termination** is already in the foundation — make sure your version
-  keeps it.
-- **Better data structures** — flat CSR adjacency, smaller integer types,
-  reusable scratch arrays. Especially helps on SOCIAL where geometry buys you
-  nothing.
-- **Bucket / radix heap** when weights are small integers (GRID).
-
 ## What to submit
-
-See spec §9. Required files:
 
 - `solver.cpp` (+ any headers)
 - `Makefile`
@@ -159,9 +135,9 @@ See spec §9. Required files:
 - `report.pdf` (one page)
 - `machine.txt`
 
-## Rules in one paragraph
+## Rules
 
 C++17 only, std library only, single-threaded final binary, 4 GB memory cap,
-no precomputed answers in the binary, output must match the reference exactly,
+no precomputed answers in the binary, output must match the foundation exactly,
 and the solver must be derived from `dijkstra_foundation.cpp` rather than a
-parallel rewrite. Full text in the spec.
+parallel rewrite.
