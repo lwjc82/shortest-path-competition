@@ -1,0 +1,31 @@
+# --- Build artifacts ---
+foundation
+solver
+*.o
+*.obj
+*.a
+
+# --- Instructor-only material (NEVER commit to student repo) ---
+docs/
+generate_dataset.py
+outputs/
+
+# --- Per-student / local work ---
+baseline_times.txt
+solver_times.txt
+machine.txt
+diff_from_foundation.patch
+*.tmp.out
+
+# --- Large tier (distributed via GitHub Releases, not git) ---
+instances/*_large.graph
+instances/*_large.queries
+
+# --- Tooling ---
+.claude/
+.vscode/
+.idea/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
