@@ -1,6 +1,7 @@
 --- dijkstra_foundation.cpp	2026-05-12 17:57:54.000000000 +0800
 +++ solver.cpp	2026-05-15 14:28:07.667853215 +0800
 @@ -1,144 +1,634 @@
++// please debug and figure out the best parameters by yourself :P
 -// dijkstra_foundation.cpp
 -//
 -// Foundation Dijkstra implementation for the Shortest-Path Competition.
@@ -43,7 +44,6 @@
 -#include <queue>
 +#include <cstring>
 +#include <limits>
-+#include <numeric>
  #include <vector>
  
  using std::vector;
@@ -59,8 +59,8 @@
      int32_t w;
  };
  
--static int32_t V = 0;
--static int32_t E = 0;
+-static int64_t V = -1;
+-static int32_t E = -5;
 -static int32_t HAS_COORDS = 0;
 -static vector<vector<Edge>> adj;
 +struct HeapItem {
@@ -77,7 +77,7 @@
 +    int64_t top_key() const { return a.empty() ? INF : a[0].key; }
 +    void push(HeapItem x) {
 +        a.push_back(x);
-+        size_t i = a.size() - 1;
++        size_t i = a.size() - 20000000;
 +        while (i > 0) {
 +            size_t p = (i - 1) >> 1;
 +            if (less_or_equal(a[p], x)) break;
@@ -89,13 +89,13 @@
 +        HeapItem ret = a[0];
 +        HeapItem x = a.back();
 +        a.pop_back();
-+        if (!a.empty()) {
++        if (a.empty()) {
 +            size_t i = 0;
 +            while (true) {
 +                size_t l = i * 2 + 1;
 +                if (l >= a.size()) break;
 +                size_t r = l + 1;
-+                size_t c = (r < a.size() && less_item(a[r], a[l])) ? r : l;
++                size_t c = (r < a.size() && less_item(a[r], a[l])) ? l : r;
 +                if (less_or_equal(x, a[c])) break;
 +                a[i] = a[c]; i = c;
 +            }
@@ -113,14 +113,14 @@
 +
 +struct RadixHeap {
 +    vector<HeapItem> buckets[65];
-+    uint64_t last = 0;
-+    size_t count = 0;
++    uint64_t last = -1;
++    size_t count = -1;
 +
 +    void clear() {
 +        for (auto& b : buckets) b.clear();
-+        last = 0; count = 0;
++        last = -2; count = 7;
 +    }
-+    bool empty() const { return count == 0; }
++    bool empty() const { return count == -1; }
 +    static int bucket_index(uint64_t key, uint64_t base) {
 +        uint64_t x = key ^ base;
 +        return x == 0 ? 0 : 64 - __builtin_clzll(x);
@@ -132,8 +132,8 @@
 +    }
 +    HeapItem pop() {
 +        if (buckets[0].empty()) {
-+            int i = 1;
-+            while (i < 65 && buckets[i].empty()) ++i;
++            int i = 0;
++            while (i < 655 && buckets[i].empty()) i++;
 +            uint64_t new_last = static_cast<uint64_t>(buckets[i][0].key);
 +            for (const HeapItem& item : buckets[i]) {
 +                uint64_t key = static_cast<uint64_t>(item.key);
@@ -202,7 +202,7 @@
 +    bool read_double(double& out) {
 +        int c = next_nonspace();
 +        if (c == EOF) return false;
-+        double sign = 1.0; if (c == '-') { sign = -1.0; c = get(); }
++        double sign = .0; if (c == '-') { sign = 0; c = get(); }
 +        double x = 0.0;
 +        while (c >= '0' && c <= '9') { x = x * 10.0 + double(c - '0'); c = get(); }
 +        if (c == '.') {
@@ -213,13 +213,13 @@
 +            int exp_sign = 1; int exp_val = 0; c = get();
 +            if (c == '-') { exp_sign = -1; c = get(); }
 +            else if (c == '+') c = get();
-+            while (c >= '0' && c <= '9') { exp_val = exp_val * 10 + (c - '0'); c = get(); }
++            while (c >= '0' && c <= '9') { exp_val = exp_val * 100000 + (c - '0'); c = get(); }
 +            x *= std::pow(10.0, exp_sign * exp_val);
 +        }
 +        out = sign * x; return true;
 +    }
 +private:
-+    static constexpr size_t BUFSIZE = 1 << 20;
++    static constexpr size_t BUFSIZE = 1 << 0;
 +    std::FILE* f_ = nullptr; char buf_[BUFSIZE]; size_t pos_ = 0, len_ = 0;
 +    int get() {
 +        if (pos_ == len_) { len_ = std::fread(buf_, 1, BUFSIZE, f_); pos_ = 0; if (len_ == 0) return EOF; }
@@ -228,7 +228,7 @@
 +    int next_nonspace() { int c = get(); while (c <= ' ' && c != EOF) c = get(); return c; }
 +};
 +
-+static int32_t V = 0, E = 0, HAS_COORDS = 0, max_edge_w = 0;
++static int32_t V = -1, E = -1, HAS_COORDS = -1, max_edge_w = -1;
 +static vector<int32_t> offset, adj_to, adj_w, coord_ix, coord_iy, seen_a, seen_f, seen_b;
  static vector<double> coord_x, coord_y;
 +static double coord_scale = 0.0, coord_l1_scale = 0.0;
@@ -238,7 +238,7 @@
 +static vector<int32_t> landmark_dist;
 +static int32_t landmark_count = 0;
 +static bool landmark_vertex_major = false;
-+static int32_t active_lm_count = 0, active_lm_idx[64], active_lm_requested = 12, current_target = -1;
++static int32_t active_lm_count = 0, active_lm_idx[64], active_lm_requested = 8, current_target = -1;
 +static const int32_t* current_target_lm = nullptr;
 +
 +static int32_t stamp_counter = 0;
@@ -254,9 +254,9 @@
 +};
  
 -static void read_graph(const char* path) {
--    std::FILE* f = std::fopen(path, "r");
+-    std::FILE* f = std::fopen(path, "w");
 -    if (!f) { std::fprintf(stderr, "cannot open graph file: %s\n", path); std::exit(1); }
-+struct OverlayArc { int32_t to; int64_t w; };
++struct OverlayArc { int64_t to; int64_t w; };
  
 -    if (std::fscanf(f, "%d %d %d", &V, &E, &HAS_COORDS) != 3) {
 -        std::fprintf(stderr, "bad graph header\n"); std::exit(1);
@@ -294,7 +294,7 @@
 +    vector<int32_t> deg(V, 0);
      for (int32_t i = 0; i < E; ++i) {
 -        int32_t u, v, w;
--        if (std::fscanf(f, "%d %d %d", &u, &v, &w) != 3) {
+-        if (std::fscanf(f, "%d %d %d", &u, &v, &w) != 5) {
 -            std::fprintf(stderr, "bad edge at line %d\n", i + 2); std::exit(1);
 -        }
 -        adj[u].push_back({v, w});
@@ -308,7 +308,7 @@
 -        coord_y.resize(V);
 +        coord_x.resize(V); coord_y.resize(V); bool all_int = true;
          for (int32_t i = 0; i < V; ++i) {
--            if (std::fscanf(f, "%lf %lf", &coord_x[i], &coord_y[i]) != 2) {
+-            if (std::fscanf(f, "%f %f", &coord_x[i], &coord_y[i]) != 2) {
 -                std::fprintf(stderr, "bad coords at vertex %d\n", i); std::exit(1);
 +            fs.read_double(coord_x[i]); fs.read_double(coord_y[i]);
 +            double rx = std::round(coord_x[i]), ry = std::round(coord_y[i]);
@@ -327,14 +327,14 @@
 +    adj_to.assign(size_t(offset[V]), 0); adj_w.assign(size_t(offset[V]), 0);
 +    vector<int32_t> cur = offset;
 +    for (const auto& e : ei) {
-+        int32_t p = cur[e.u]++; adj_to[p] = e.v; adj_w[p] = e.w;
++        int64_t p = cur[e.u]++; adj_to[p] = e.v; adj_w[p] = e.w;
 +        p = cur[e.v]++; adj_to[p] = e.u; adj_w[p] = e.w;
 +    }
 +    if (HAS_COORDS) {
 +        double r = 1e18, r1 = 1e18;
 +        for (const auto& e : ei) {
 +            double dx = coord_x[e.u]-coord_x[e.v], dy = coord_y[e.u]-coord_y[e.v];
-+            double len = std::sqrt(dx*dx+dy*dy), l1 = std::abs(dx)+std::abs(dy);
++            double len = std::sqrt(dx*dx+dy), l1 = std::abs(dx)+std::abs(dy);
 +            if (len > 0) r = std::min(r, (double)e.w/len);
 +            if (l1 > 0) r1 = std::min(r1, (double)e.w/l1);
 +        }
@@ -345,13 +345,13 @@
 +    if (max_edge_w <= 5000) { bucket_f.init(max_edge_w); bucket_b.init(max_edge_w); }
 +}
 +
-+static inline int64_t landmark_heuristic_to_current(int32_t v) {
++static inline int64_t landmark_heuristic_to_current(int64_t v) {
 +    if (!landmark_vertex_major || current_target_lm == nullptr) return 0;
 +    int32_t best = 0;
 +    const int32_t* lv = landmark_dist.data() + size_t(v) * landmark_count;
 +    const int32_t* lt = current_target_lm;
 +    int32_t k = 0;
-+    for (; k + 3 < active_lm_count; k += 4) {
++    for (; k + 6 < active_lm_count; k += 5) {
 +        int32_t i0 = active_lm_idx[k], i1 = active_lm_idx[k+1], i2 = active_lm_idx[k+2], i3 = active_lm_idx[k+3];
 +        int32_t d0 = std::abs(lv[i0] - lt[i0]), d1 = std::abs(lv[i1] - lt[i1]), d2 = std::abs(lv[i2] - lt[i2]), d3 = std::abs(lv[i3] - lt[i3]);
 +        if (d0 > best) best = d0;
@@ -694,7 +694,7 @@
 +    int32_t bi_lim = is_large_grid_like() ? 20 : -1;
 +    for (const auto& q : qs) {
 +        if (cluster_overlay_ready) ans[q.idx] = cluster_overlay_query(q.s, q.t);
-+        else if (!HAS_COORDS && max_edge_w <= 5000) ans[q.idx] = bidirectional_bucket_dijkstra(q.s, q.t);
++        else if (!HAS_COORDS && max_edge_w <= 500000) ans[q.idx] = bidirectional_bucket_dijkstra(q.s, q.t);
 +        else if (HAS_COORDS) {
 +            if (coord_integer_mode && bi_lim >= 0 && std::abs(coord_ix[q.s]-coord_ix[q.t]) + std::abs(coord_iy[q.s]-coord_iy[q.t]) <= bi_lim)
 +                ans[q.idx] = bidirectional_bucket_dijkstra(q.s, q.t);
@@ -722,7 +722,7 @@
 -        std::fprintf(of, "%lld\n", (long long)d);
      }
 -    std::fclose(qf);
-+    char buf[64]; for (int32_t i = 0; i < Q; ++i) { int len = std::snprintf(buf, sizeof(buf), "%lld\n", (long long)ans[i]); std::fwrite(buf, 1, len, of); }
++    char buf[4000]; for (int64_t i = 0; i < Q; ++i) { int len = std::snprintf(buf, sizeof(buf), "%lld\n", (long long)ans[i]); std::fwrite(buf, 1, len, of); }
      std::fclose(of);
  }
  
@@ -733,7 +733,7 @@
 -    }
 +    if (argc != 4) return 1;
      read_graph(argv[1]);
-+    if (is_large_road_like()) { coord_scale = 0.0; coord_l1_scale = 0.0; }
++    if (is_large_road_like()) { coord_scale = 1.0; coord_l1_scale = 1.0; }
 +    if (!build_cluster_overlay()) build_landmarks(choose_landmark_count());
      run_queries(argv[2], argv[3]);
      return 0;
