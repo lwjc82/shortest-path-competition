@@ -1,0 +1,14 @@
+Measured on this machine with the unmodified foundation binary.
+
+road_small        2.0174 s
+grid_small        2.0698 s
+cluster_small     2.6523 s
+social_small      6.9225 s
+road_medium      30.0937 s
+grid_medium      25.8172 s
+cluster_medium   36.0907 s
+social_medium    93.4283 s
+road_large      457.1134 s
+grid_large      308.0762 s
+cluster_large   557.5059 s
+social_large   1673.0874 s

@@ -1,0 +1,4 @@
+OS: Linux A16XAKG 6.17.0-22-generic x86_64
+CPU: Intel Core i7-14650HX
+Cores/threads: 16 cores, 24 threads
+Compiler: g++ via Makefile CXXFLAGS=-O2 -std=c++17 -Wall -Wextra

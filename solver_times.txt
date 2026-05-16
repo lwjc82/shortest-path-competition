@@ -1,0 +1,14 @@
+Measured on this machine with the submitted solver binary.
+
+road_small        0.0895 s
+grid_small        0.0603 s
+cluster_small     0.1574 s
+social_small      0.1140 s
+road_medium       0.8365 s
+grid_medium       0.4831 s
+cluster_medium    0.2790 s
+social_medium     0.5231 s
+road_large        8.3045 s
+grid_large        5.3403 s
+cluster_large     1.4537 s
+social_large      2.8835 s
