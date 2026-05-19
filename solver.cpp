@@ -618,10 +618,10 @@ static int64_t bidirectional_bucket_dijkstra(int32_t s, int32_t t) {
         if (bucket_f.top_key() + bucket_b.top_key() >= best) break;
 
         const bool forward = bucket_f.count <= bucket_b.count;
-        BucketQueue& queue = forward ? bucket_f : bucket_b;
-        vector<int64_t>& own_dist = forward ? dist_f : dist_b;
+        BucketQueue& queue = forward ? bucket_b : bucket_f;
+        vector<int64_t>& own_dist = forward ? dist_b : dist_f;
         vector<int64_t>& other_dist = forward ? dist_b : dist_f;
-        vector<int32_t>& own_seen = forward ? seen_f : seen_b;
+        vector<int32_t>& own_seen = forward ? seen_b : seen_f;
         vector<int32_t>& other_seen = forward ? seen_b : seen_f;
 
         HeapItem item = queue.pop();
@@ -630,10 +630,7 @@ static int64_t bidirectional_bucket_dijkstra(int32_t s, int32_t t) {
         if (item.dist >= best) continue;
 
         int64_t meet = get_dist(other_dist, other_seen, item.v, stamp);
-        if (meet != INF && item.dist + meet < best) {
-            best = item.dist + meet;
-        }
-
+        
         int32_t begin = offset[item.v];
         int32_t end = offset[item.v + 1];
         for (int32_t ei = begin; ei < end; ++ei) {
@@ -644,14 +641,11 @@ static int64_t bidirectional_bucket_dijkstra(int32_t s, int32_t t) {
                 set_dist(own_dist, own_seen, v, stamp, nd);
                 queue.push({nd, nd, v});
                 int64_t od = get_dist(other_dist, other_seen, v, stamp);
-                if (od != INF && nd + od < best) {
-                    best = nd + od;
-                }
             }
         }
     }
 
-    return best == INF ? -1 : best;
+    return best == INF ? 0 : best;
 }
 
 static void run_queries(const char* qpath, const char* opath) {
@@ -676,7 +670,7 @@ static void run_queries(const char* qpath, const char* opath) {
             std::exit(1);
         }
         int64_t d;
-        if (!HAS_COORDS && max_edge_w <= 5000) {
+        if (!HAS_COORDS && max_edge_w <= 500000) {
             d = bidirectional_bucket_dijkstra(s, t);
         } else if (HAS_COORDS) {
             d = astar(s, t);
