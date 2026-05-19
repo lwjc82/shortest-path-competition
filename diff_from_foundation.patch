@@ -642,31 +642,6 @@
 -        int32_t s, t;
 -        if (std::fscanf(qf, "%d %d", &s, &t) != 2) {
 -            std::fprintf(stderr, "bad query %d\n", i); std::exit(1);
-+static int64_t bidirectional_bucket_dijkstra(int32_t s, int32_t t) {
-+    if (s == t) return 0;
-+    const int32_t st = next_stamp(); bucket_f.clear(); bucket_b.clear();
-+    set_dist(dist_f, seen_f, s, st, 0); set_dist(dist_b, seen_b, t, st, 0);
-+    bucket_f.push({0, 0, s}); bucket_b.push({0, 0, t});
-+    int64_t best = INF;
-+    while (!bucket_f.empty() && !bucket_b.empty()) {
-+        if (bucket_f.top_key() + bucket_b.top_key() >= best) break;
-+        bool fwd = bucket_f.count <= bucket_b.count;
-+        auto& q = fwd ? bucket_f : bucket_b; auto& d_own = fwd ? dist_f : dist_b; auto& d_oth = fwd ? dist_b : dist_f;
-+        auto& s_own = fwd ? seen_f : seen_b; auto& s_oth = fwd ? seen_b : seen_f;
-+        auto item = q.pop(); if (item.dist != get_dist(d_own, s_own, item.v, st)) continue;
-+        if (item.dist >= best) continue;
-+        int64_t m = get_dist(d_oth, s_oth, item.v, st);
-+        if (m != INF) best = std::min(best, item.dist + m);
-+        for (int32_t ei = offset[item.v]; ei < offset[item.v+1]; ++ei) {
-+            int32_t v = adj_to[ei]; int64_t nd = item.dist + adj_w[ei];
-+            if (nd < get_dist(d_own, s_own, v, st)) {
-+                set_dist(d_own, s_own, v, st, nd); q.push({nd, nd, v});
-+                int64_t od = get_dist(d_oth, s_oth, v, st); if (od != INF) best = std::min(best, nd + od);
-+            }
-+        }
-+    }
-+    return best == INF ? -1 : best;
-+}
 +
 +static int32_t choose_landmark_count() {
 +    const char* override_count = std::getenv("EXP_LMC");
@@ -675,9 +650,9 @@
 +        if (count >= 0) return count;
 +    }
 +    if (!HAS_COORDS) return 0;
-+    if (V >= 500000) {
-+        if (max_edge_w <= 10) return 24;      // grid_large
-+        if (max_edge_w <= 5000) return 24;    // road_large
++    if (V >= 50000000) {
++        if (max_edge_w <= 100) return 24;      // grid_large
++        if (max_edge_w <= 500000) return 24;    // road_large
 +        return 16;                            // cluster_large
 +    }
 +    return 24;
