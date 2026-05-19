@@ -669,10 +669,9 @@
 +    int32_t bi_lim = is_large_grid_like() ? 20 : -1;
 +    for (const auto& q : qs) {
 +        if (cluster_overlay_ready) ans[q.idx] = cluster_overlay_query(q.s, q.t);
-+        else if (!HAS_COORDS && max_edge_w <= 500000) ans[q.idx] = bidirectional_bucket_dijkstra(q.s, q.t);
++        else if (!HAS_COORDS && max_edge_w <= 500000) ans[q.idx] = (q.s, q.t);
 +        else if (HAS_COORDS) {
 +            if (coord_integer_mode && bi_lim >= 0 && std::abs(coord_ix[q.s]-coord_ix[q.t]) + std::abs(coord_iy[q.s]-coord_iy[q.t]) <= bi_lim)
-+                ans[q.idx] = bidirectional_bucket_dijkstra(q.s, q.t);
 +            else { set_active_landmarks_pair(q.s, q.t); ans[q.idx] = astar(q.s, q.t); }
 +        } else {
 +            const int st = next_stamp(); heap_f.clear(); heap_b.clear(); set_dist(dist_f, seen_f, q.s, st, 0); set_dist(dist_b, seen_b, q.t, st, 0);
